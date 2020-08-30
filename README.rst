@@ -39,10 +39,11 @@ Add the following to your ``INSTALLED_APPS``:
 Include social auth urls to your urls.py:
 
 .. code-block:: python
+    from django.conf.urls import url
 
     urlpatterns = patterns(
         ...
-        (r'^auth/', include('drf_social_oauth2.urls', namespace='drf')),
+        url(r'^auth/', include('drf_social_oauth2.urls', namespace='drf')),
     )
 
 

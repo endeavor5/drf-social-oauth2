@@ -7,6 +7,7 @@ from social_core.exceptions import MissingBackend
 from social_django.utils import load_strategy, load_backend
 from social_django.views import NAMESPACE
 
+from jose import jwt
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 from oauth2_provider.models import Application, AccessToken
 from oauth2_provider.settings import oauth2_settings
@@ -91,7 +92,8 @@ class ConvertTokenView(CsrfExemptMixin, OAuthLibMixin, APIView):
             request._request.POST[key] = value
 
         url, headers, body, status = self.create_token_response(request._request)
-        response = Response(data=json.loads(body), status=status)
+        token = jwt.encode(json.loads(body), 'secret', algorithm='HS256')
+        response = Response(data={'jwt': token}, status=status)
 
         for k, v in headers.items():
             response[k] = v
