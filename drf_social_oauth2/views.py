@@ -1,4 +1,5 @@
 import json
+from typing import Dict, Any
 
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -92,12 +93,36 @@ class ConvertTokenView(CsrfExemptMixin, OAuthLibMixin, APIView):
             request._request.POST[key] = value
 
         url, headers, body, status = self.create_token_response(request._request)
-        token = jwt.encode(json.loads(body), 'secret', algorithm='HS256')
-        response = Response(data={'jwt': token}, status=status)
+
+        body = json.loads(body)
+        access_token_data = self.__token_essential_data(body)
+        refresh_token_data = self.__token_essential_data(
+            body, token_type='refresh_token'
+        )
+
+        access_token_data = jwt.encode(access_token_data, 'secret', algorithm='HS256')
+        refresh_token_data = jwt.encode(refresh_token_data, 'secret', algorithm='HS256')
+        response = Response(
+            data={
+                'access_token': access_token_data,
+                'refresh_token': refresh_token_data,
+            },
+            status=status,
+        )
 
         for k, v in headers.items():
             response[k] = v
         return response
+
+    def __token_essential_data(
+        self, body: Dict[str, Any], token_type: str = 'access_token'
+    ) -> Dict[str, Any]:
+        return {
+            token_type: body.get(token_type, ''),
+            'expires_in': body.get('expires_in', ''),
+            'token_type': body.get('token_type', ''),
+            'scope': body.get('scope', ''),
+        }
 
 
 class RevokeTokenView(CsrfExemptMixin, OAuthLibMixin, APIView):
